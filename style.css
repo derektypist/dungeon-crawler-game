@@ -1,0 +1,118 @@
+/* Import Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Roboto&family=Special+Elite&display=swap");
+
+/* Body */
+body {
+  background-color: black;
+  text-align: center;
+  color: white;
+  font-family: "Special Elite", cursive;
+}
+
+/* Sticky Top */
+#sticky-top {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
+
+/* Status Bar */
+
+#status-bar {
+  font-family: "Roboto", Arial, Verdana, sans-serif;
+  background-color: #343148;
+  color: white;
+  padding: 10px;
+  font-size: 2em;
+  line-height: 20px;
+}
+
+#status-bar p {
+  display: inline;
+  padding: 0 10px;
+}
+
+/* Table Cell */
+td {
+  background-color: #363945;
+  width: 20px;
+  height: 20px;
+  color: gray;
+}
+
+/* New Game Menu */
+#new-game-menu {
+  padding: 20px;
+  background-color: #363945;
+  text-align: center;
+}
+
+#new-game-menu h2 {
+  margin: 50px;
+}
+
+#new-game-menu .em {
+  height: 300px;
+  width: 300px;
+}
+
+#new-game-menu button {
+  margin: 40px;
+  padding: 7px 50px;
+  font-size: 24px;
+}
+
+/* Button */
+button {
+  margin: 0 20px;
+  color: orange;
+  background-color: #22232b;
+  font-size: 18px;
+  padding: 5px 20px;
+  font-weight: bold;
+  border: 4px solid orange;
+}
+
+button:hover {
+  color: white;
+  border-color: grey;
+}
+
+/* Messages  */
+.message-win,
+.message-lose,
+.message-next-dungeon {
+  display: none;
+  position: absolute;
+  top: 300px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  font-size: 40px;
+  padding: 20px;
+  z-index: 15;
+}
+
+.message-win {
+  color: #a0daa9;
+}
+
+.message-lose {
+  color: #f5df4d;
+}
+
+.message-next-dungeon {
+  color: #e8a798;
+}
+
+/* Box */
+.box {
+  margin: 40px auto;
+  border: 10px solid #343148;
+}
+
+/* Black */
+.black {
+  background-color: #121211;
+  border: none;
+}
