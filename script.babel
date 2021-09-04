@@ -1,0 +1,448 @@
+// Set Up Global Varialbes
+let myNewGameState = {
+  pos_player: [5, 5],
+  attack_player: 10,
+  health_player: 100,
+  weapon_player: "stick",
+  xp_player: 0,
+  game_status: 0,
+  health_enemy: 0,
+  gamer_level: 1
+};
+
+let $loseMessage = $("#loseMessage");
+let $winMessage = $("#winMessage");
+let $nextDungeon = $("#nextDungeon");
+
+let iconClassNameByType = {
+  wall: "em",
+  room: "em",
+  player: "em em-sunglasses",
+  enemy: "em em-japanese_ogre",
+  boss: "em em-smiling_imp",
+  health: "em em-green_apple",
+  weapon: "em em-gun",
+  door: "em em-door"
+};
+let darkness = "black";
+let sight = 4;
+
+// React Classes
+
+const StatusBar = (props) => {
+  return (
+    <div id="status-bar">
+      <p>Health: {props.health}</p>
+      <p>Attack: {props.attack}</p>
+      <p>Weapon: {props.weapon}</p>
+      <p>Level: {props.gamer_level}</p>
+      <p>XP: {props.xp}</p>
+      <button onClick={props.toggleFunction}>Toggle Darkness </button>
+    </div>
+  );
+};
+
+const EnemyHealth = (props) => {
+  let styleProgress = { width: "100%", backgroundColor: "#363945" };
+  let styleBar = {
+    width: Math.min(props.health * 100, 100) + "%",
+    height: "20px",
+    backgroundColor: "#00A591"
+  };
+  let textBar = props.health > 0 ? "Enemy Health" : "";
+  return (
+    <div id="Progress" style={styleProgress}>
+      <div id="Bar" style={styleBar}>
+        {" "}
+        {textBar}{" "}
+      </div>
+    </div>
+  );
+};
+
+class Board extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = myNewGameState;
+    this.onKeyPressed = this.onKeyPressed.bind(this);
+    this.toggleDarkness = this.toggleDarkness.bind(this);
+  }
+
+  componentDidMount() {
+    document.addEventListener("keydown", this.onKeyPressed);
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener("keydown", this.onKeyPressed);
+  }
+
+  onKeyPressed(event) {
+    // Adjust player position
+    let pos = this.state.pos_player;
+    let posDelta = [0, 0];
+    switch (event.keyCode) {
+      case 37:
+        posDelta[1]--;
+        break;
+      case 38:
+        posDelta[0]--;
+        break;
+      case 39:
+        posDelta[1]++;
+        break;
+      case 40:
+        posDelta[0]++;
+        break;
+    }
+    let posX = pos[0] + posDelta[0];
+    let posY = pos[1] + posDelta[1];
+    if (gameBoard[posX][posY].name == "") {
+      // Empty Field
+      gameBoard[posX][posY].name = "player";
+      gameBoard[pos[0]][pos[1]].name = "";
+      this.setState({ pos_player: [posX, posY] });
+    } else if (gameBoard[posX][posY].name == "health") {
+      // Health Potions
+      let health = this.state.health_player + gameBoard[posX][posY].value;
+      gameBoard[[posX]][posY] = { name: "player" };
+      gameBoard[pos[0]][pos[1]].name = "";
+      this.setState({ pos_player: [posX, posY], health_player: health });
+    } else if (gameBoard[posX][posY].name == "weapon") {
+      // New Weapon
+      let attack = this.state.attack_player + gameBoard[posX][posY].attack;
+      let item = gameBoard[posX][posY].item_name;
+      gameBoard[posX][posY] = { name: "player" };
+      gameBoard[pos[0]][pos[1]].name = "";
+      this.setState({
+        pos_player: [posX, posY],
+        attack_player: attack,
+        weapon_player: item
+      });
+    } else if (gameBoard[posX][posY].name == "door") {
+      // Door to Next Dungeon
+
+      // Display message to find way to next dungeon - use fade in and fade out
+      $nextDungeon.fadeIn(1000).delay(3000).fadeOut(1500);
+      let lvlNew = this.state.game_status + 1;
+      gameBoard = fancyLevel(lvlNew);
+      this.setState({
+        pos_player: myNewGameState.pos_player,
+        game_status: lvlNew,
+        health_enemy: 0
+      });
+    } else if (
+      gameBoard[posX][posY].name == "enemy" ||
+      gameBoard[posX][posY].name == "boss"
+    ) {
+      // Enemy or Final Boss
+      gameBoard[posX][posY].health -= Math.floor(
+        this.state.attack_player * (0.8 * 0.2 * Math.random() + 1)
+      );
+      let health = this.state.health_player - gameBoard[posX][posY].attack;
+      let healthEnemy =
+        gameBoard[posX][posY].health / gameBoard[posX][posY].health_basic;
+      if (health > 0) {
+        this.setState({
+          health_player: health,
+          health_enemy: healthEnemy
+        });
+      }
+      if (
+        gameBoard[posX][posY].health <= 0 &&
+        gameBoard[posX][posY].name == "boss"
+      ) {
+        // Enemy Defeated
+
+        // Display Win Message - use fade in and fade out
+        $winMessage.fadeIn(1000).delay(3000).fadeOut(1500);
+        gameBoard = fancyLevel(1);
+        this.setState(myNewGameState);
+      } else if (gameBoard[posX][posY].health <= 0) {
+        gameBoard[posX][posY].name = "player";
+        gameBoard[pos[0]][pos[1]].name = "";
+        let myNewXP = this.state.xp_player + 100 * this.state.game_status;
+        let myNewAttack = this.state.attack_player;
+        let myNewLevel = this.state.gamer_level;
+        if (myNewXP > 300 * (myNewLevel * 2) == 0) {
+          myNewAttack += 5 * myNewLevel;
+          myNewLevel += 1;
+        }
+        this.setState({
+          pos_player: [posX, posY],
+          xp_player: myNewXP,
+          attack_player: myNewAttack,
+          health_enemy: 0,
+          gamer_level: myNewLevel
+        });
+      } else {
+        // Empty Gamer Health
+
+        // Display Lose Message - use fade in and fade out
+        $loseMessage.fadeIn(1000).delay(3000).fadeOut(1500);
+        gameBoard = fancyLevel(1);
+        this.setState(myNewGameState);
+      }
+    }
+  }
+
+  // Toggle Darkness
+  toggleDarkness() {
+    darkness = darkness == "black" ? "" : "black";
+    this.setState({});
+  }
+
+  render() {
+    if (this.state.game_status > 0) {
+      let board = gameBoard.map((data, keyRow) => {
+        let cells = data.map((cell, keyCol) => {
+          let posPl = this.state.pos_player;
+          let addClass = "";
+          let sR = sight;
+          // Make a circle like area of the gamefield visible
+          if (
+            keyRow < posPl[0] - sR ||
+            keyRow > posPl[0] + sR ||
+            keyCol < posPl[1] - sR ||
+            keyCol > posPl[1] + sR ||
+            (keyCol < posPl[1] - sR + 1 && keyRow > posPl[0]) ||
+            (keyCol < posPl[1] - sR + 1 && keyRow < posPl[0]) ||
+            (keyCol > posPl[1] + sR - 1 && keyRow > posPl[0]) ||
+            (keyCol > posPl[1] + sR - 1 && keyRow < posPl[0]) ||
+            (keyRow < posPl[0] - sR + 1 && keyCol > posPl[1]) ||
+            (keyRow < posPl[0] - sR + 1 && keyCol < posPl[1]) ||
+            (keyRow > posPl[0] + sR - 1 && keyCol > posPl[1]) ||
+            (keyRow > posPl[0] + sR - 1 && keyCol < posPl[1]) ||
+            ((keyRow == posPl[0] + sR - 1 || keyRow == posPl[0] - sR + 1) &&
+              keyCol == posPl[1] + sR - 1) ||
+            ((keyRow == posPl[0] + sR - 1 || keyRow == posPl[0] - sR + 1) &&
+              keyCol == posPl[1] - sR + 1)
+          ) {
+            addClass = darkness;
+          }
+
+          return (
+            <td className={addClass}>
+              <i className={iconClassNameByType[cell.name]}></i>
+            </td>
+          );
+        });
+        return <tr id={"r" + keyRow}>{cells}</tr>;
+      });
+      return (
+        <div>
+          <h2 className="text-center">Dungeon {this.state.game_status}</h2>
+          <div id="sticky-top">
+            <StatusBar
+              gamer_level={this.state.gamer_level}
+              health={this.state.health_player}
+              attack={this.state.attack_player}
+              weapon={this.state.weapon_player}
+              xp={this.state.xp_player}
+              toggleFunction={this.toggleDarkness}
+            />
+            <EnemyHealth health={this.state.health_enemy} />
+          </div>
+          <div id="container">
+            {" "}
+            <table align="center" className="box">
+              {" "}
+              {board}
+            </table>{" "}
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div id="new-game-menu">
+          <h2 id="r5">Do you want to start a new game?</h2>
+          <i className="em em-door"></i>
+          <br />
+          <button
+            onClick={function () {
+              this.setState({ game_status: 1 });
+            }.bind(this)}
+          >
+            Yes!{" "}
+          </button>
+        </div>
+      );
+    }
+  }
+}
+
+// Game Board Creation Functions
+function fancyLevel(lvl) {
+  let board = [];
+  let rooms = createRooms(1, Math.min(2 + lvl, 5));
+  let width = 0;
+  let height = 0;
+  let pad = 1;
+  rooms.map((room) => {
+    width = Math.max(width, room[1] + room[2][1]);
+    height = Math.max(height, room[0] + room[2][0]);
+  });
+
+  for (let h = 0; h < height + 2 * pad; h++) {
+    board.push([]);
+    for (let w = 0; w < width + 2 * pad; w++) {
+      board[h].push({ name: "wall" });
+    }
+  }
+
+  // Make rooms into the game board and adjust with the padding
+  rooms.map(function (room) {
+    for (var s = room[0]; s < room[0] + room[2][0]; s++) {
+      for (var r = room[1]; r < room[1] + room[2][1]; r++) {
+        board[s + pad][r + pad] = { name: "" };
+      }
+    }
+  });
+
+  // Set Up Weapon Items and Extras
+  let arrItems = [
+    {
+      name: "weapon",
+      item_name: "sword",
+      attack: 15
+    },
+    {
+      name: "weapon",
+      item_name: "morning star",
+      attack: 25
+    },
+    {
+      name: "weapon",
+      item_name: "double-sword",
+      attack: 40
+    },
+    {
+      name: "weapon",
+      item_name: "ax",
+      attack: 50
+    },
+    {
+      name: "weapon",
+      item_name: "legendary sword",
+      attack: 75
+    }
+  ];
+
+  let extras = {
+    enemies: lvl * 0.4,
+    health: lvl * 0.1
+  };
+
+  board[5][5] = { name: "player" };
+
+  rooms.map(function (room) {
+    // Add Enemies in the rooms
+    if (Math.random() < extras.enemies > 0 && room[3] === "room") {
+      let x = room[0] + Math.floor(Math.random() * room[2][0]);
+      let y = room[1] + Math.floor(Math.random() * room[2][1]);
+      board[x + pad][y + pad] = {
+        name: "enemy",
+        health: 100 * (lvl / 2),
+        attack: 25 * lvl + 10,
+        health_basic: 100 * (lvl / 2)
+      };
+    }
+  });
+
+  // Add Health Items in the rooms
+  rooms = rooms.reverse();
+  rooms.map(function (room) {
+    if (Math.random() > extras.health && room[3] === "room") {
+      let x = room[0] + Math.floor(Math.random() * room[2][0]);
+      let y = room[1] + Math.floor(Math.random() * room[2][1]);
+      board[x + pad][y + pad] = { name: "health", value: (25 * lvl) / 5 + 25 };
+    }
+  });
+
+  // Place the Weapon in the new map
+  let itemRoom = Math.floor((rooms.length / 3) * Math.random());
+  let room = rooms[itemRoom];
+  board[room[0] + pad + 1][room[1] + pad + 1] = arrItems[lvl - 1];
+
+  // Place the door or boss in the map
+  let bossOrStairs = lvl == 5 ? "boss" : "door";
+  room = rooms[Math.floor((rooms.length / 3) * Math.random())];
+  board[room[0] + pad + 1][room[1] + pad + 1] = {
+    name: bossOrStairs,
+    health: 1000,
+    attack: 75,
+    health_basic: 1000
+  };
+  return board;
+}
+
+function createRooms(lvl, room) {
+  let rooms = [[1, 1, [5, 5]]];
+  let floors = [];
+
+  for (let i = 0; i < room; i++) {
+    // Rooms to Right
+    let numRoomsRow = 4;
+    for (let j = 0; j < numRoomsRow; j++) {
+      rooms.unshift(FloorRight(rooms[rooms.length - 1]));
+      rooms.push(theNewRoom(rooms[0]));
+    }
+    // Bottom Rooms
+    rooms.unshift(FloorDown(rooms[rooms.length - numRoomsRow - 1]));
+    rooms.push(theNewRoom(rooms[0]));
+  }
+  return rooms;
+}
+
+function FloorDown(room) {
+  // Create floor at down side
+  let y = room[0] + room[2][0];
+  let x = Math.floor(room[1] + 1 + (Math.random() * room[2][1]) / 2);
+  let l = Math.floor(1 + Math.random() * 3);
+  let floor = [y, x, [l, 1], "down"];
+  return floor;
+}
+
+function FloorRight(room) {
+  let x = room[1] + room[2][1];
+  let y = Math.floor(room[0] + 1 + (Math.random() * room[2][0] - 1));
+  let l = Math.floor(2 + Math.random() * 3);
+  let floor = [y, x, [1, l], "right"];
+  return floor;
+}
+
+function theNewRoom(floor) {
+  let RoomXY = [];
+  if (floor[3] == "down") {
+    RoomXY = [floor[0] + floor[2][0], floor[1] + floor[2][1] - 2];
+  } else {
+    RoomXY = [floor[0] + floor[2][0] - 2, floor[1] + floor[2][1]];
+  }
+
+  let arrRoom = [
+    [5, 3],
+    [4, 4],
+    [6, 6],
+    [8, 6],
+    [6, 8]
+  ];
+
+  return [RoomXY[0], RoomXY[1], arrRoom[Math.floor(Math.random() * 5)], "room"];
+}
+
+let gameBoard = [];
+gameBoard = fancyLevel(1);
+ReactDOM.render(<Board />, document.getElementById("app"));
+
+// Add Event Listener
+window.addEventListener(
+  "keydown",
+  function (e) {
+    /* Space and Arrow Keys
+     (Prevent scrolling on page to keep game focused)
+     */
+    if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+      e.preventDefault();
+    }
+  },
+  false
+);
