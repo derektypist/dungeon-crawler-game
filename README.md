@@ -29,7 +29,7 @@ The ability to toggle darkness.
 
 ## Technologies
 
-Uses HTML5, CSS3, React 18.0.0-Alpha, JavaScript, Google Fonts Bootstrap 5.0.2, jQuery 3.6.0 and Emoji Awesome 0.0.2.
+Uses HTML5, CSS3, React 18.0.0-Alpha, JavaScript, Google Fonts, Bootstrap 5.0.2, jQuery 3.6.0 and Emoji Awesome 0.0.2.
 
 ## Testing
 
