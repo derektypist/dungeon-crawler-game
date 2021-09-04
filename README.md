@@ -2,7 +2,7 @@
 
 The purpose of the project is to provide a dungeon crawler game.  The aim is to kill the boss in dungeon 4.
 
-## UX
+## UX
 
 As a user, I have a health, a level and a weapon.  I can pick up a better weapon.  I can pick up health items.
 
